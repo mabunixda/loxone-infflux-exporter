@@ -22,6 +22,7 @@ type MetricValue struct {
 }
 type Metric struct {
 	URI string
+	Interval int
 	Values []MetricValue
 }
 
@@ -31,12 +32,10 @@ type Configuration struct {
 	Metrics 	[]Metric
 }
 
-const (
-	timeout = 10 * 1000
-)
 
 var (
 	valueRegex = regexp.MustCompile("^(\\d+([\\.,]\\d+)?)")
+	timeout = 10
 	addr string
 	config string
 	configuration Configuration
@@ -45,7 +44,7 @@ var (
 func init() {
 	flag.StringVar(&addr,"listen-address", ":8080", "The address to listen on for HTTP requests.")
 	flag.StringVar(&config,"config", "config.json", "The configuration file which data should be requested")
-
+	flag.IntVar(&timeout, "interval", timeout, "the default interval of each metric in seconds")
 	if config == "" {
 		logrus.Fatalf("You must pass a configuration file")
 	}
@@ -139,7 +138,11 @@ func singleNode(m Metric, server string, auth string) {
 		if err == nil { 
 			pushData(m.Values, body)
 		}
-		time.Sleep(time.Duration(timeout * time.Millisecond))
+		interval := timeout 
+		if m.Interval > 0 {
+			interval = m.Interval
+		}
+		time.Sleep(time.Duration(interval * int(time.Second)))
 	}
 }
 
