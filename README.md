@@ -17,6 +17,6 @@ This Go Implementation is able to monitor [Loxone Miniserver](http://www.loxone.
 
 ### Todo ###
 * Create UI to configure the metrics
-** Connect to Miniserver, load the configuration, select Controls to Monitor with default query
-** Provide a Dialog to select values of the control
+* Connect to Miniserver, load the configuration, select Controls to Monitor with default query
+* Provide a Dialog to select values of the control
 * Editing of existing Configuration
