@@ -29,7 +29,7 @@ type Metric struct {
 type Configuration struct {
 	Miniserver	string
 	Authentication string
-	Metrics 	[]Metric
+	Metrics		[]Metric
 }
 
 
@@ -65,6 +65,7 @@ func queryData(url string, auth string) (*xmlpath.Node,error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		logrus.Errorf("Could not make request to miniserver %s", err)
           	return nil, err
   	}
 	req.Header.Add("Content-Type", "application/xml; charset=utf-8")
@@ -74,44 +75,45 @@ func queryData(url string, auth string) (*xmlpath.Node,error) {
    	resp, err := client.Do(req)
    	if err != nil {
 		logrus.Errorf("Failure on getting request: %s", err)
-    	return nil, err
+    		return nil, err
   	}
    	defer resp.Body.Close()
 	xmlData, err := xmlpath.Parse(resp.Body)
-    if err != nil {
+    	if err != nil {
 		logrus.Errorf("Failure on parsing request %s, %s", url, err)
-        return nil, err
-    }
+        	return nil, err
+    	}
     return xmlData, nil
 }
 
 func pushData(vals []MetricValue, data *xmlpath.Node) {
-
+	logrus.Infof("Parsing values...")
 	for i:=0; i < len(vals); i++ {
-		// logrus.Infof("%s",vals[i].ValuePath)
 		path := xmlpath.MustCompile(vals[i].ValuePath)
+		logrus.Infof("Compiled xlm path")
 		if value, ok := path.String(data); ok {
 
 			if valueRegex.MatchString(value) == false {
 				logrus.Errorf("not a valid value: %s", value)
 				continue
 			}
-
 			parsedValue := valueRegex.FindAllString(value,-1)
 			if len(parsedValue) == 0 {
 				logrus.Errorf("Could not parse values: %s", value)
 				continue
 			}
-			// logrus.Infof("current value: %s", parsedValue)
+			logrus.Infof("current value: %s", parsedValue)
 			f, err := strconv.ParseFloat(parsedValue[0], 64)
 
 			if err != nil {
 				logrus.Errorf("Failure on getting float value: %s", err)
 				continue
 			}
-//		    logrus.Infof("%d", f)		
+		    	logrus.Infof("%d", f)		
 			vals[i].Gauge.Set(f)
-		}
+		} else {
+			logrus.Errorf("Could not parse path: %s", data)
+}
 	}
 }
 
@@ -137,6 +139,8 @@ func singleNode(m Metric, server string, auth string) {
 		body,err := queryData(url, auth)
 		if err == nil { 
 			pushData(m.Values, body)
+		} else {
+			logrus.Errorf("Could not push datavalues %s", err)
 		}
 		interval := timeout 
 		if m.Interval > 0 {
