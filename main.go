@@ -34,7 +34,7 @@ type Configuration struct {
 
 
 var (
-	valueRegex = regexp.MustCompile("^(\\d+([\\.,]\\d+)?)")
+	valueRegex = regexp.MustCompile("^(-?\\d+([\\.,]\\d+)?)")
 	timeout = 10
 	addr string
 	config string
@@ -63,6 +63,7 @@ func init() {
 
 func queryData(url string, auth string) (*xmlpath.Node,error) {
 	client := &http.Client{}
+	logrus.Infof("Current url %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		logrus.Errorf("Could not make request to miniserver %s", err)
@@ -118,7 +119,7 @@ func pushData(vals []MetricValue, data *xmlpath.Node) {
 }
 
 func singleNode(m Metric, server string, auth string) {
-	url := "http://" + server + "/" + m.URI
+	url := "http://" + server +  m.URI
 	for i := 0; i < len(m.Values); i++ {
 		if m.URI == "" {
 			logrus.Fatalf("No url defined in a configuration")
@@ -136,6 +137,7 @@ func singleNode(m Metric, server string, auth string) {
 		prometheus.MustRegister(m.Values[i].Gauge)
 	}
 	for {
+		logrus.Infof("Current url: %s", url)
 		body,err := queryData(url, auth)
 		if err == nil { 
 			pushData(m.Values, body)
