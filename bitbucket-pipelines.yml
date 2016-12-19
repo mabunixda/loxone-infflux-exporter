@@ -7,10 +7,5 @@ pipelines:
           - go get github.com/Sirupsen/logrus
           - go get github.com/prometheus/client_golang/prometheus
           - go get gopkg.in/xmlpath.v2
-<<<<<<< HEAD
-          - go get github.com/gorilla/mux
-          - go build -v
-=======
           - evn GOOS=linux GOARCH=amd64 go build -v
-	  - env GOOS=linux GOARCH=arm GOARM=7 go build
->>>>>>> dev
+	  # - env GOOS=linux GOARCH=arm GOARM=7 go build
