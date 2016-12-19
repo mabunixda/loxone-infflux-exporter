@@ -19,3 +19,7 @@ type Configuration struct {
 	Authentication string	`json:"Authentication"`
 	Metrics 	[]Metric	`json:"Metrics"`
 }
+
+type LoxValue struct {
+	value		string
+}

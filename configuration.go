@@ -12,5 +12,4 @@ func listConfiguration(w http.ResponseWriter, r *http.Request) {
     if err := json.NewEncoder(w).Encode(configuration); err != nil {
         panic(err)
     }
-	
 }
