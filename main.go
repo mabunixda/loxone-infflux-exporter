@@ -47,8 +47,10 @@ func main() {
 	for i := 0; i < len(configuration.Metrics); i++ {
 		go singleNode(configuration.Metrics[i], configuration.Miniserver, configuration.Authentication)
 	}
-	router := NewRouter()
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
-	router.Handle("/metrics", prometheus.Handler())
-	http.ListenAndServe(addr, router)
+//	router := NewRouter()
+//	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
+//	router.Handle("/metrics", prometheus.Handler())
+http.Handle("/metrics", prometheus.Handler())
+http.ListenAndServe(addr, nil)
+//	http.ListenAndServe(addr, router)
 }

@@ -1,6 +1,6 @@
 
 CONTAINER=loxprom
-TODAY=`date +'%Y%M%d'`
+TODAY=`date +'%Y%m%d'`
 
 container: golang
 	docker build -t ${CONTAINER}:${TODAY} . 

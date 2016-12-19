@@ -66,7 +66,7 @@ func pushData(vals []MetricValue, data *xmlpath.Node) {
 }
 
 func singleNode(m Metric, server string, auth string) {
-	url := "http://" + server + "/" + m.URI
+	url := "http://" + server  + m.URI
 	for i := 0; i < len(m.Values); i++ {
 		if m.URI == "" {
 			logrus.Fatalf("No url defined in a configuration")
