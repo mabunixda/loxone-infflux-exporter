@@ -1,8 +1,6 @@
-FROM debian:jessie
+FROM alpine:latest
 MAINTAINER Martin Buchleitner "martin@nitram.at"
-RUN apt-get update
-RUN apt-get install -y ca-certificates
-
+RUN apk --no-cache add ca-certificates
 COPY loxonegoprometheus /opt/loxonegoprometheus
 RUN chmod 755 /opt/loxonegoprometheus
 
