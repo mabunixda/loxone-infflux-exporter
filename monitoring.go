@@ -5,10 +5,11 @@ import (
     "time"
     "strconv"
     "regexp"
+	"encoding/json"
 
     "github.com/Sirupsen/logrus"
-    "gopkg.in/xmlpath.v2"
     "github.com/influxdata/influxdb/client/v2"
+	"github.com/oliveagle/jsonpath"
 )
 
 
@@ -18,60 +19,65 @@ const (
 var (
     valueRegex = regexp.MustCompile("^(-?\\d+([\\.,]\\d+)?)")
 )
-func queryData(url string, auth string) (*xmlpath.Node,error) {
+func queryData(url string, auth string) (interface{},error) {
     client := &http.Client{}
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {
         return nil, err
     }
-    req.Header.Add("Content-Type", "application/xml; charset=utf-8")
+    req.Header.Add("Content-Type", "application/json; charset=utf-8")
     req.Header.Add("Authorization", "Basic " + auth)
-    req.Header.Add("Accept", "application/xml")
+    req.Header.Add("Accept", "application/json")
     resp, err := client.Do(req)
     if err != nil {
         logrus.Errorf("Failure on getting request: %s", err)
     	return nil, err
     }
     defer resp.Body.Close()
-    xmlData, err := xmlpath.Parse(resp.Body)
-    if err != nil {
-        logrus.Errorf("Failure on parsing request %s, %s", url, err)
-        return nil, err
-    }
-    return xmlData, nil
+	var jsonData interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&jsonData); err != nil {
+    logrus.Errorf("Failure on parsing request %s, %s", url, err)
+    return nil, err
+
+	}
+	logrus.Infof("%s", jsonData)
+    return jsonData, nil
 }
 
-func pushData(m Metric, data *xmlpath.Node, bp client.BatchPoints) {
+func pushData(m Metric, data interface{}, bp client.BatchPoints) {
 
-            // fields are values of a sensor
-            tags := map[string]string {}
-            fields := map[string]interface{} {}
+    // fields are values of a sensor
+    tags := map[string]string {}
+    fields := map[string]interface{} {}
 
     vals := m.Values
     for i:=0; i < len(vals); i++ {
-        path := xmlpath.MustCompile(vals[i].ValuePath)
-        if value, ok := path.String(data); ok {
-
-            if valueRegex.MatchString(value) == false {
-                logrus.Errorf("not a valid value: %s", value)
-                continue
-            }
-
-            parsedValue := valueRegex.FindAllString(value,-1)
-            if len(parsedValue) == 0 {
-                logrus.Errorf("Could not parse values: %s", value)
-                continue
-            }
-            f, err := strconv.ParseFloat(parsedValue[0], 64)
-
-            if err != nil {
-                logrus.Errorf("Failure on getting float value: %s", err)
-                continue
-            }
-			logrus.Infof("Setting %s to %s", vals[i].Name, value)
-            fields[vals[i].Name] = f
+		jsonValue, err := jsonpath.JsonPathLookup(data, vals[i].ValuePath)
+		if err != nil {
+			continue
+		}
+		value, ok := jsonValue.(string)
+		if ok == false {
+			continue
+		}
+        if valueRegex.MatchString(value) == false {
+            logrus.Errorf("not a valid value: %s", value)
+            continue
         }
 
+        parsedValue := valueRegex.FindAllString(value,-1)
+        if len(parsedValue) == 0 {
+            logrus.Errorf("Could not parse values: %s", value)
+            continue
+        }
+        f, err := strconv.ParseFloat(parsedValue[0], 64)
+
+        if err != nil {
+            logrus.Errorf("Failure on getting float value: %s", err)
+            continue
+        }
+		logrus.Infof("Setting %s to %s", vals[i].Name, value)
+	    fields[vals[i].Name] = f
     }
 	logrus.Infof("Adding new datapoint")
     // use sensors name as newpoint
@@ -94,7 +100,7 @@ func singleNode(m Metric, loxConfig LoxoneConfig, c client.Client) {
             logrus.Fatalf("No url defined in a configuration")
         }
         if m.Values[i].ValuePath == "" {
-            m.Values[i].ValuePath = "/LL/@value"
+            m.Values[i].ValuePath = "$.LL.value"
         }
     }
     bp, err := client.NewBatchPoints(client.BatchPointsConfig{
