@@ -15,6 +15,6 @@ all: container
 goreq:
 	export GOTPATH=${PWD}
 	go get github.com/Sirupsen/logrus
-	go get github.com/prometheus/client_golang/prometheus
+	go get github.com/influxdata/influxdb/client/v2
 	go get gopkg.in/xmlpath.v2
 	go get github.com/gorilla/mux

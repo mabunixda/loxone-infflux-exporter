@@ -1,23 +1,29 @@
 package main;
 
-import "github.com/prometheus/client_golang/prometheus"
 
-
-type MetricValue struct { 
-	Name string 			`json:"name"`
-	ValuePath string		`json:"valuepath"`
-	Gauge prometheus.Gauge
+type MetricValue struct {
+	Name		string		`json:"name"`
+	ValuePath	string		`json:"valuepath"`
 }
 type Metric struct {
-	URI string				`json:"URI"`
-	Interval int			`json:"interval"`
-	Values []MetricValue	`json:"Values"`
+	Name		string		`json:Name`
+	URI		string		`json:"URI"`
+	Interval	int		`json:"interval"`
+	Values		[]MetricValue	`json:"Values"`
 }
-
+type InfluxDbConfig struct {
+	Address		string		`json:"Address"`
+	Username	string		`json:"Username"`
+	Password	string		`json:"Password"`
+}
+type LoxoneConfig struct {
+	Address		string		`json:"Address"`
+	Authentication	string		`json:"Authentication"`
+}
 type Configuration struct {
-	Miniserver	string		`json:"Miniserver"`
-	Authentication string	`json:"Authentication"`
-	Metrics 	[]Metric	`json:"Metrics"`
+	InfluxDb	InfluxDbConfig	`json:"Influx"`
+	Loxone		LoxoneConfig	`json:"Loxone"`
+	Metrics		[]Metric	`json:"Metrics"`
 }
 
 type LoxValue struct {
