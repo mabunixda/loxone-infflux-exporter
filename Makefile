@@ -1,10 +1,11 @@
 
-CONTAINER=r.nitram.at/loxprom
+CONTAINER=r.nitram.at/lox-influx-exporter
 TODAY=`date +'%Y%m%d'`
 
 container: golang
 	docker build -t ${CONTAINER}:${TODAY} .
 	docker tag ${CONTAINER}:${TODAY} ${CONTAINER}:latest
+	docker push ${CONTAINER}:latest
 
 golang: goreq
 	export GOPATH=${PWD}

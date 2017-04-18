@@ -2,11 +2,10 @@ FROM alpine:latest
 MAINTAINER Martin Buchleitner "martin@nitram.at"
 
 RUN apk --no-cache add ca-certificates
-ADD loxonegoprometheus /opt/loxonegoprometheus
-RUN chmod 755 /opt/loxonegoprometheus
+ADD loxoneinfluxexporter /opt/loxoneinfluxexporter
+RUN chmod 755 /opt/loxoneinfluxexporter
     
-VOLUME "/opt/config"
 
 WORKDIR "/opt"
 EXPOSE 8080
-ENTRYPOINT ["./loxonegoprometheus"]
+ENTRYPOINT ["./loxoneinfluxexporter"]
