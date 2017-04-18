@@ -8,4 +8,4 @@ RUN chmod 755 /opt/loxoneinfluxexporter
 
 WORKDIR "/opt"
 EXPOSE 8080
-ENTRYPOINT ["./loxoneinfluxexporter"]
+ENTRYPOINT ["/opt/loxoneinfluxexporter"]
