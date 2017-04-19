@@ -9,6 +9,7 @@ pipelines:
           - go get github.com/oliveagle/jsonpath
           - go get github.com/gorilla/mux
           - env GOOS=linux GOARCH=amd64 go build -v
+          - ls -l
           - docker build -t loxinflux .
           
 options:
