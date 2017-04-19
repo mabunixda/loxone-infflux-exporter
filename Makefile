@@ -2,7 +2,7 @@
 CONTAINER=r.nitram.at/lox-influx-exporter
 TODAY=`date +'%Y%m%d'`
 
-container: golang
+container: 
 	docker build -t ${CONTAINER}:${TODAY} .
 	docker tag ${CONTAINER}:${TODAY} ${CONTAINER}:latest
 	docker push ${CONTAINER}:latest
