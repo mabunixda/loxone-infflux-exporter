@@ -40,7 +40,6 @@ func queryData(url string, auth string) (interface{},error) {
     return nil, err
 
 	}
-	logrus.Infof("%s", jsonData)
     return jsonData, nil
 }
 
@@ -54,10 +53,12 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
     for i:=0; i < len(vals); i++ {
 		jsonValue, err := jsonpath.JsonPathLookup(data, vals[i].ValuePath)
 		if err != nil {
+			logrus.Errorf("Could not json path lookup: %s", err)
 			continue
 		}
 		value, ok := jsonValue.(string)
 		if ok == false {
+			logrus.Errorf("Could not get jsonValue: %s", vals[i].Name)
 			continue
 		}
         if valueRegex.MatchString(value) == false {
@@ -76,8 +77,12 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
             logrus.Errorf("Failure on getting float value: %s", err)
             continue
         }
-		logrus.Infof("Setting %s to %s", vals[i].Name, value)
-	    fields[vals[i].Name] = f
+	logrus.Infof("Setting %s to %f", vals[i].Name, f)
+        fields[vals[i].Name] = f
+    }
+    if len(fields) == 0 {
+	logrus.Infof("Not adding a datapoint %s", m.Name)
+	return
     }
 	logrus.Infof("Adding new datapoint")
     // use sensors name as newpoint
@@ -88,6 +93,7 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
                 )
     if err != nil {
         logrus.Errorf("Could not add new point %s", err)
+	return
     }
     bp.AddPoint(pt)
 
@@ -109,7 +115,7 @@ func singleNode(m Metric, loxConfig LoxoneConfig, c client.Client) {
     })
 
     if err != nil {
-        logrus.Errorf("Error at push: %s", err)
+        logrus.Errorf("Error at creating batch points: %s", err)
     }
     for {
         body,err := queryData(url, loxConfig.Authentication)
