@@ -53,8 +53,8 @@ func influxDBClient(config InfluxDbConfig) client.Client {
 func main() {
     runtime.GOMAXPROCS(6)
     flag.Parse()
-    c := influxDBClient(configuration.InfluxDb)
     for i := 0; i < len(configuration.Metrics); i++ {
+        c := influxDBClient(configuration.InfluxDb)
         go singleNode(configuration.Metrics[i], configuration.Loxone, c)
     }
     router := NewRouter()
