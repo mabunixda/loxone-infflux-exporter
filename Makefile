@@ -9,7 +9,7 @@ container: golang
 
 golang: goreq
 	export GOPATH=${PWD}
-	go build
+	go build -v -o loxoneinfluxexporter
 
 all: container
 
