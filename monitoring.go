@@ -6,6 +6,7 @@ import (
     "strconv"
     "regexp"
 	"encoding/json"
+    "sync"
 
     "github.com/Sirupsen/logrus"
     "github.com/influxdata/influxdb/client/v2"
@@ -18,7 +19,10 @@ const (
 )
 var (
     valueRegex = regexp.MustCompile("^(-?\\d+([\\.,]\\d+)?)")
+    bp client.BatchPoints
+    mutex sync.Mutex
 )
+
 func queryData(url string, auth string) (interface{},error) {
     client := &http.Client{}
     req, err := http.NewRequest("GET", url, nil)
@@ -36,14 +40,13 @@ func queryData(url string, auth string) (interface{},error) {
     defer resp.Body.Close()
 	var jsonData interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&jsonData); err != nil {
-    logrus.Errorf("Failure on parsing request %s, %s", url, err)
-    return nil, err
-
+        logrus.Errorf("Failure on parsing request %s, %s", url, err)
+        return nil, err
 	}
     return jsonData, nil
 }
 
-func pushData(m Metric, data interface{}, bp client.BatchPoints) {
+func pushData(m Metric, data interface{}) {
 
     // fields are values of a sensor
     tags := map[string]string {}
@@ -82,9 +85,10 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
         fields[vals[i].Name] = f
     }
     if len(fields) == 0 {
-	logrus.Infof("Not adding a datapoint %s", m.Name)
-	return
+    	logrus.Infof("Not adding a datapoint %s", m.Name)
+	    return
     }
+
 	logrus.Infof("Adding new datapoint")
     // use sensors name as newpoint
     pt, err := client.NewPoint(m.Name,
@@ -94,13 +98,63 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
                 )
     if err != nil {
         logrus.Errorf("Could not add new point %s", err)
-	return
+	    return
     }
+    mutex.Lock()
     bp.AddPoint(pt)
-
+    mutex.Unlock()
 }
 
-func singleNode(m Metric, loxConfig LoxoneConfig, c client.Client) {
+
+
+func monitoring(config Configuration) {
+
+    go pushService(configuration.InfluxDb)
+
+    time.Sleep(time.Duration(1 * int(time.Second)))
+
+    for i := 0; i < len(configuration.Metrics); i++ {
+        go singleNode(configuration.Metrics[i], configuration.Loxone)
+    }
+}
+
+func pushService(config InfluxDbConfig) {
+    c, err := client.NewHTTPClient(client.HTTPConfig {
+        Addr:    config.Address,
+        Username:    config.Username,
+        Password:    config.Password,
+    })
+    if err != nil {
+        logrus.Fatalf("Error at influx connection: %s", err);
+    }
+        mutex.Lock()
+        bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+                    Database:  database,
+                    Precision: "s",
+		    WriteConsistency: "any",
+        })
+        if err != nil {
+            logrus.Errorf("Error at creating batch points: %s", err)
+        }
+        mutex.Unlock()
+
+    for{
+        time.Sleep(time.Duration(config.Interval * int(time.Second)))
+        mutex.Lock()
+        if err := c.Write(bp); err != nil {
+           logrus.Errorf("could not write bachpoints: %s", err)
+        }
+        bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+                    Database:  database,
+                    Precision: "s",
+		    WriteConsistency: "any",
+        })
+        mutex.Unlock()
+	logrus.Infof("Wrote new Batchpoints....");
+    }
+}
+
+func singleNode(m Metric, loxConfig LoxoneConfig) {
     url := "http://" + loxConfig.Address  + m.URI
     for i := 0; i < len(m.Values); i++ {
         if m.URI == "" {
@@ -110,22 +164,11 @@ func singleNode(m Metric, loxConfig LoxoneConfig, c client.Client) {
             m.Values[i].ValuePath = "$.LL.value"
         }
     }
-    bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-                    Database:  database,
-                    Precision: "s",
-		    WriteConsistency: "any",
-    })
 
-    if err != nil {
-        logrus.Errorf("Error at creating batch points: %s", err)
-    }
     for {
         body,err := queryData(url, loxConfig.Authentication)
         if err == nil {
-            pushData(m, body, bp)
-            if err := c.Write(bp); err != nil {
-                logrus.Errorf("could not write bachpoints: %s", err)
-            }
+            pushData(m, body)
         } else {
             logrus.Errorf("%s", err)
         }

@@ -8,8 +8,6 @@ import (
     "encoding/json"
 
     "github.com/Sirupsen/logrus"
-
-    "github.com/influxdata/influxdb/client/v2"
 )
 
 var (
@@ -39,24 +37,12 @@ func init() {
 
 }
 
-func influxDBClient(config InfluxDbConfig) client.Client {
-    c, err := client.NewHTTPClient(client.HTTPConfig {
-        Addr:    config.Address,
-        Username:    config.Username,
-        Password:    config.Password,
-    })
-    if err != nil {
-        logrus.Fatalf("Error at influx connection: %s", err);
-    }
-    return c
-}
 func main() {
     runtime.GOMAXPROCS(6)
     flag.Parse()
-    for i := 0; i < len(configuration.Metrics); i++ {
-        c := influxDBClient(configuration.InfluxDb)
-        go singleNode(configuration.Metrics[i], configuration.Loxone, c)
-    }
+
+    go monitoring(configuration)
+
     router := NewRouter()
     router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
     http.ListenAndServe(addr, router)
