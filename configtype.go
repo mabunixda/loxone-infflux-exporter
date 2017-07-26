@@ -15,6 +15,7 @@ type InfluxDbConfig struct {
     Address        string        `json:"Address"`
     Username    string        `json:"Username"`
     Password    string        `json:"Password"`
+    Interval    int            `json:"Interval"`
 }
 type LoxoneConfig struct {
     Address        string        `json:"Address"`
