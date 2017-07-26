@@ -49,6 +49,7 @@ func pushData(m Metric, data interface{}, bp client.BatchPoints) {
     tags := map[string]string {}
     fields := map[string]interface{} {}
 
+    tags[m.Name] = m.Name
     vals := m.Values
     for i:=0; i < len(vals); i++ {
 		jsonValue, err := jsonpath.JsonPathLookup(data, vals[i].ValuePath)
@@ -112,6 +113,7 @@ func singleNode(m Metric, loxConfig LoxoneConfig, c client.Client) {
     bp, err := client.NewBatchPoints(client.BatchPointsConfig{
                     Database:  database,
                     Precision: "s",
+		    WriteConsistency: "any",
     })
 
     if err != nil {
