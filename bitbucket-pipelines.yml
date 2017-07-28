@@ -4,8 +4,6 @@ pipelines:
   default:
     - step:
         script:
-        - apk --no-cache add git make go-bindata docker
-        - make 
+        - apk --no-cache add git make
+        - make golang
           
-options:
-  docker: true
