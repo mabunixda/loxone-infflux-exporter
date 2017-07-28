@@ -81,7 +81,7 @@ func pushData(m Metric, data interface{}) {
             logrus.Errorf("Failure on getting float value: %s", err)
             continue
         }
-	logrus.Infof("Setting %s to %f", vals[i].Name, f)
+    	logrus.Debugf("Setting %s to %f", vals[i].Name, f)
         fields[vals[i].Name] = f
     }
     if len(fields) == 0 {
@@ -95,7 +95,7 @@ func pushData(m Metric, data interface{}) {
                           tags,
                           fields,
                           time.Now(),
-                )
+                          )
     if err != nil {
         logrus.Errorf("Could not add new point %s", err)
 	    return
@@ -127,22 +127,24 @@ func pushService(config InfluxDbConfig) {
     if err != nil {
         logrus.Fatalf("Error at influx connection: %s", err);
     }
-        mutex.Lock()
-        bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+    mutex.Lock()
+    bp, err = client.NewBatchPoints(client.BatchPointsConfig{
                     Database:  database,
                     Precision: "s",
-		    WriteConsistency: "any",
-        })
-        if err != nil {
+	        	    WriteConsistency: "any",
+    })
+    if err != nil {
             logrus.Errorf("Error at creating batch points: %s", err)
-        }
-        mutex.Unlock()
+    }
+    mutex.Unlock()
 
     for{
         time.Sleep(time.Duration(config.Interval * int(time.Second)))
         mutex.Lock()
-        if err := c.Write(bp); err != nil {
-           logrus.Errorf("could not write bachpoints: %s", err)
+        if len(bp.Points()) > 0 {
+            if err := c.Write(bp); err != nil {
+               logrus.Errorf("could not write bachpoints: %s", err)
+            }
         }
         bp, err = client.NewBatchPoints(client.BatchPointsConfig{
                     Database:  database,
@@ -150,7 +152,7 @@ func pushService(config InfluxDbConfig) {
 		    WriteConsistency: "any",
         })
         mutex.Unlock()
-	logrus.Infof("Wrote new Batchpoints....");
+	    logrus.Infof("Wrote new Batchpoints....");
     }
 }
 
