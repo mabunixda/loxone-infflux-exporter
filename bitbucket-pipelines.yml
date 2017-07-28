@@ -1,17 +1,11 @@
-image: desertbit/golang-gb
+image: golang:1.8-alpine
 
 pipelines:
   default:
     - step:
         script:
-          - go get github.com/Sirupsen/logrus
-          - go get github.com/influxdata/influxdb/client/v2
-          - go get github.com/oliveagle/jsonpath
-          - go get github.com/gorilla/mux
-          - env GOOS=linux GOARCH=amd64 go build -v -o loxoneinfluxexporter
-          - docker build -t r.nitram.at/lox-influx-exporter:latest .
-          - docker login r.nitram.at -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-          - docker push r.nitram.at/lox-influx-exporter:latest
+        - apk --no-cache add git make docker
+        - make 
           
 options:
   docker: true
