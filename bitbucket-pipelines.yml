@@ -4,6 +4,6 @@ pipelines:
   default:
     - step:
         script:
-        - apk --no-cache add git make
-        - make golang
+        - apk --no-cache add git make go-bindata@testing npm
+        - make bindata golang
           
